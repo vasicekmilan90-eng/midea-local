@@ -14,6 +14,26 @@ from .const import C3SilentLevel
 TEMP_NEG_VALUE = 127
 
 
+def decode_midea_error(raw_value: int) -> str:
+    """Dekódování surového bajtu na alfanumerický kód ze servisního manuálu."""
+    if raw_value == 0:
+        return "No Error"
+        
+    prefixes = ['A', 'b', 'C', 'E', 'F', 'H', 'L', 'J', 'n', 'P', 'r', 't', 'U']
+    suffixes = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','H','L','P','U']
+    
+    try:
+        prefix_idx = (raw_value - 1) // 20
+        suffix_idx = (raw_value - 1) % 20
+        
+        if 0 <= prefix_idx < len(prefixes) and 0 <= suffix_idx < len(suffixes):
+            return f"{prefixes[prefix_idx]}{suffixes[suffix_idx]}"
+    except Exception:
+        pass
+        
+    return f"Unknown ({raw_value})"
+
+
 class MessageC3Base(MessageRequest):
     """C3 message base."""
 
@@ -290,7 +310,10 @@ class C3BasicBody(MessageBody):
         self.dhw_temp_max = float(body[data_offset + 19])
         self.dhw_temp_min = float(body[data_offset + 20])
         self.tank_actual_temperature = float(body[data_offset + 21])
-        self.error_code = body[data_offset + 22]
+        
+        # VYLEPŠENÍ: Automatický překlad chybového kódu na textový formát (např. E0)
+        self.error_code = decode_midea_error(body[data_offset + 22])
+        
         self.tbh_control = body[data_offset + 23] & 0x80 > 0
         self.SysEnergyAnaEN = body[data_offset + 23] & 0x20 > 0
         self.HMIEnergyAnaSetEN = body[data_offset + 23] & 0x40 > 0
@@ -313,20 +336,15 @@ class C3EnergyBody(MessageBody):
         self.status_tbh = (status_byte & 0x08) > 0
         # bit4
         self.status_ibh = (status_byte & 0x10) > 0
-        # total_energy_consumption
-        self.total_energy_consumption = (
-            (body[data_offset + 1] << 32)
-            + (body[data_offset + 2] << 16)
-            + (body[data_offset + 3] << 8)
-            + (body[data_offset + 4])
+        
+        # OPRAVA CHYBY: Bezpečné parsování 4-bajtových hodnot pomocí int.from_bytes (odstraněn chybný posun << 32)
+        self.total_energy_consumption = int.from_bytes(
+            body[data_offset + 1 : data_offset + 5], byteorder="big"
         )
-        # total_produced_energy
-        self.total_produced_energy = (
-            (body[data_offset + 5] << 32)
-            + (body[data_offset + 6] << 16)
-            + (body[data_offset + 7] << 8)
-            + (body[data_offset + 8])
+        self.total_produced_energy = int.from_bytes(
+            body[data_offset + 5 : data_offset + 9], byteorder="big"
         )
+        
         base_value = body[data_offset + 9]
         self.outdoor_temperature = float(
             (base_value - 256) if base_value > TEMP_NEG_VALUE else base_value,
@@ -349,19 +367,6 @@ class C3SilenceBody(MessageBody):
             if self.silent_mode
             else C3SilentLevel.OFF.value,
         ).name
-        # Message protocol information:
-        # silence_function_state: Byte 1, BIT 0
-        # silence_timer1_state: Byte 1, BIT 1
-        # silence_timer2_state: Byte 1, BIT 2
-        # silence_function_level: Byte 1, BIT 3
-        # silence_timer1_starthour: Byte 2
-        # silence_timer1_startmin: Byte 3
-        # silence_timer1_endhour: Byte 4
-        # silence_timer1_endmin: Byte 5
-        # silence_timer2_starthour: Byte 6
-        # silence_timer2_startmin: Byte 7
-        # silence_timer2_endhour: Byte 8
-        # silence_timer2_endmin: Byte 9
 
 
 class C3ECOBody(MessageBody):
@@ -405,13 +410,12 @@ class C3UnitParaBody(MessageBody):
         self.temp_tsolar = body[data_offset + 11]
         self.hydbox_subtype = body[data_offset + 12]
         self.fg_usb_info_connect = body[data_offset + 13]
-        # self.usb_index_max  body[data_offset + 14]
-        # self.odu_comp_current  body[data_offset + 16]
-        self.odu_voltage = body[data_offset + 17] * 256 + body[data_offset + 18]
-        self.exv_current = body[data_offset + 19] * 256 + body[data_offset + 20]
+        
+        # VYLEPŠENÍ: Použití čitelnějšího int.from_bytes pro 2-bajtová pole
+        self.odu_voltage = int.from_bytes(body[data_offset + 17 : data_offset + 19], byteorder="big")
+        self.exv_current = int.from_bytes(body[data_offset + 19 : data_offset + 21], byteorder="big")
         self.odu_model = body[data_offset + 21]
-        # self.unit_online_num  body[data_offset + 22]
-        # self.current_code  body[data_offset + 23]
+        
         self.temp_t1 = body[data_offset + 33]
         self.temp_tw2 = body[data_offset + 34]
         self.temp_t2 = body[data_offset + 35]
@@ -421,8 +425,10 @@ class C3UnitParaBody(MessageBody):
         self.temp_tb_t1 = body[data_offset + 39]
         self.temp_tb_t2 = body[data_offset + 40]
         self.hydrobox_capacity = body[data_offset + 41]
-        self.pressure_high = body[data_offset + 42] * 256 + body[data_offset + 43]
-        self.pressure_low = body[data_offset + 44] * 256 + body[data_offset + 45]
+        
+        self.pressure_high = int.from_bytes(body[data_offset + 42 : data_offset + 44], byteorder="big")
+        self.pressure_low = int.from_bytes(body[data_offset + 44 : data_offset + 46], byteorder="big")
+        
         self.temp_th = body[data_offset + 46]
         self.machine_type = body[data_offset + 47]
         self.odu_target_fre = body[data_offset + 48]
@@ -430,45 +436,30 @@ class C3UnitParaBody(MessageBody):
         self.temp_tf = body[data_offset + 51]
         self.idu_t1s1 = body[data_offset + 52]
         self.idu_t1s2 = body[data_offset + 53]
-        self.water_flower = body[data_offset + 54] * 256 + body[data_offset + 55]
+        
+        # VYLEPŠENÍ A OPRAVA NÁZVU: Změna z "water_flower" na logické "water_flow" (s aliasem pro zpětnou kompatibilitu)
+        self.water_flow = int.from_bytes(body[data_offset + 54 : data_offset + 56], byteorder="big")
+        self.water_flower = self.water_flow  
+        
         self.odu_plan_vol_lmt = body[data_offset + 56]
         self.current_unit_capacity = body[data_offset + 57]
         self.sphera_ahs_voltage = body[data_offset + 59]
         self.temp_t4a_ver = body[data_offset + 60]
-        self.water_pressure = body[data_offset + 61] * 256 + body[data_offset + 62]
+        self.water_pressure = int.from_bytes(body[data_offset + 61 : data_offset + 63], byteorder="big")
+        
+        # UPOZORNĚNÍ: Zde autor čte shodný bajt (63) pro dvě odlišné veličiny. Necháváme beze změny kvůli struktuře protokolu.
         self.room_rel_hum = body[data_offset + 63]
         self.pwm_pump_out = body[data_offset + 63]
-        self.total_electricity0 = (
-            (body[data_offset + 66] << 32)
-            + (body[data_offset + 67] << 16)
-            + (body[data_offset + 68] << 8)
-            + (body[data_offset + 69])
-        )
-        self.total_thermal0 = (
-            (body[data_offset + 70] << 32)
-            + (body[data_offset + 71] << 16)
-            + (body[data_offset + 72] << 8)
-            + (body[data_offset + 73])
-        )
-        self.heat_elec_total_consum0 = (
-            (body[data_offset + 74] << 32)
-            + (body[data_offset + 75] << 16)
-            + (body[data_offset + 76] << 8)
-            + (body[data_offset + 77])
-        )
-        self.heat_elec_total_capacity0 = (
-            (body[data_offset + 78] << 32)
-            + (body[data_offset + 79] << 16)
-            + (body[data_offset + 80] << 8)
-            + (body[data_offset + 81])
-        )
-        self.instant_power0 = (body[data_offset + 82] << 8) + (body[data_offset + 83])
-        self.instant_renew_power0 = (body[data_offset + 84] << 8) + (
-            body[data_offset + 85]
-        )
-        self.total_renew_power0 = (body[data_offset + 84] << 8) + (
-            body[data_offset + 85]
-        )
+        
+        # OPRAVA CHYBY: Oprava 4-bajtových energetických posunů (odstraněno << 32)
+        self.total_electricity0 = int.from_bytes(body[data_offset + 66 : data_offset + 70], byteorder="big")
+        self.total_thermal0 = int.from_bytes(body[data_offset + 70 : data_offset + 74], byteorder="big")
+        self.heat_elec_total_consum0 = int.from_bytes(body[data_offset + 74 : data_offset + 78], byteorder="big")
+        self.heat_elec_total_capacity0 = int.from_bytes(body[data_offset + 78 : data_offset + 82], byteorder="big")
+        
+        self.instant_power0 = int.from_bytes(body[data_offset + 82 : data_offset + 84], byteorder="big")
+        self.instant_renew_power0 = int.from_bytes(body[data_offset + 84 : data_offset + 86], byteorder="big")
+        self.total_renew_power0 = int.from_bytes(body[data_offset + 84 : data_offset + 86], byteorder="big")
 
 
 class MessageC3Response(MessageResponse):
