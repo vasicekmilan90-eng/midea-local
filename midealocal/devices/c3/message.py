@@ -439,7 +439,6 @@ class C3UnitParaBody(MessageBody):
         
         # VYLEPŠENÍ A OPRAVA NÁZVU: Změna z "water_flower" na logické "water_flow" (s aliasem pro zpětnou kompatibilitu)
         self.water_flow = int.from_bytes(body[data_offset + 54 : data_offset + 56], byteorder="big")
-        self.water_flower = self.water_flow  
         
         self.odu_plan_vol_lmt = body[data_offset + 56]
         self.current_unit_capacity = body[data_offset + 57]
