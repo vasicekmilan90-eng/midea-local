@@ -98,7 +98,7 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.temp_ta: None,
                 DeviceAttributes.pressure_high: None,
                 DeviceAttributes.pressure_low: None,
-                DeviceAttributes.water_flower: None,
+                DeviceAttributes.water_flow: None,
                 DeviceAttributes.water_pressure: None,
                 DeviceAttributes.heat_elec_total_consum0: None,
                 DeviceAttributes.heat_elec_total_capacity0: None,
