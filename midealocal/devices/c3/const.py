@@ -60,7 +60,7 @@ class DeviceAttributes(StrEnum):
     temp_ta = "temp_ta"
     pressure_high = "pressure_high"
     pressure_low = "pressure_low"
-    water_flower = "water_flower"
+    water_flow = "water_flow"
     water_pressure = "water_pressure"
     heat_elec_total_consum0 = "heat_elec_total_consum0"
     heat_elec_total_capacity0 = "heat_elec_total_capacity0"
