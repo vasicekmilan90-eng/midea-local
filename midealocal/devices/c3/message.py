@@ -430,7 +430,7 @@ class C3UnitParaBody(MessageBody):
         self.temp_tf = body[data_offset + 51]
         self.idu_t1s1 = body[data_offset + 52]
         self.idu_t1s2 = body[data_offset + 53]
-        self.water_flower = body[data_offset + 54] * 256 + body[data_offset + 55]
+        self.water_flow = body[data_offset + 54] * 256 + body[data_offset + 55]
         self.odu_plan_vol_lmt = body[data_offset + 56]
         self.current_unit_capacity = body[data_offset + 57]
         self.sphera_ahs_voltage = body[data_offset + 59]
@@ -466,66 +466,33 @@ class C3UnitParaBody(MessageBody):
         self.instant_renew_power0 = (body[data_offset + 84] << 8) + (
             body[data_offset + 85]
         )
-        self.total_renew_power0 = (
-            (body[data_offset + 86] << 24)
-            + (body[data_offset + 87] << 16)
-            + (body[data_offset + 88] << 8)
-            + (body[data_offset + 89])
+        self.total_renew_power0 = (body[data_offset + 84] << 8) + (
+            body[data_offset + 85]
         )
 
 
 class MessageC3Response(MessageResponse):
     """C3 message response."""
 
-    # Minimum body length (bytes after data_offset=1) required by each body
-    # parser. Some frames (e.g. ACK/echo replies to a SET command) carry the
-    # body_type byte but no actual payload, which used to crash the parser
-    # with an IndexError. See MIN_BODY_LEN usage below.
-    MIN_BODY_LEN: dict[ListTypes, int] = {  # noqa: RUF012
-        ListTypes.X01: 24,
-        ListTypes.X04: 14,
-        ListTypes.X05: 1,
-        ListTypes.X07: 1,
-        ListTypes.X09: 4,
-        ListTypes.X10: 90,
-    }
-
     def __init__(self, message: bytes) -> None:
         """Initialize C3 message response."""
         super().__init__(bytearray(message))
-        body = super().body
-        # Bytes available after data_offset=1 (all body parsers below use
-        # data_offset=1, i.e. they skip the leading body_type byte).
-        available = len(body) - 1
-
-        def _has_enough_data(list_type: ListTypes) -> bool:
-            return available >= self.MIN_BODY_LEN.get(list_type, 0)
-
         if (
-            (
-                self.message_type
-                in [MessageType.set, MessageType.notify1, MessageType.query]
-                and self.body_type == ListTypes.X01
-            )
-            or self.message_type == MessageType.notify2
-        ) and _has_enough_data(ListTypes.X01):
-            self.set_body(C3BasicBody(body, data_offset=1))
+            self.message_type
+            in [MessageType.set, MessageType.notify1, MessageType.query]
+            and self.body_type == ListTypes.X01
+        ) or self.message_type == MessageType.notify2:
+            self.set_body(C3BasicBody(super().body, data_offset=1))
         elif (
-            self.message_type == MessageType.notify1
-            and self.body_type == ListTypes.X04
-            and _has_enough_data(ListTypes.X04)
+            self.message_type == MessageType.notify1 and self.body_type == ListTypes.X04
         ):
-            self.set_body(C3EnergyBody(body, data_offset=1))
-        elif (
-            self.message_type == MessageType.query
-            and self.body_type == ListTypes.X05
-            and _has_enough_data(ListTypes.X05)
-        ):
-            self.set_body(C3SilenceBody(body, data_offset=1))
-        elif self.body_type == ListTypes.X07 and _has_enough_data(ListTypes.X07):
-            self.set_body(C3ECOBody(body, data_offset=1))
-        elif self.body_type == ListTypes.X09 and _has_enough_data(ListTypes.X09):
-            self.set_body(C3DisinfectBody(body, data_offset=1))
-        elif self.body_type == ListTypes.X10 and _has_enough_data(ListTypes.X10):
-            self.set_body(C3UnitParaBody(body, data_offset=1))
+            self.set_body(C3EnergyBody(super().body, data_offset=1))
+        elif self.message_type == MessageType.query and self.body_type == ListTypes.X05:
+            self.set_body(C3SilenceBody(super().body, data_offset=1))
+        elif self.body_type == ListTypes.X07:
+            self.set_body(C3ECOBody(super().body, data_offset=1))
+        elif self.body_type == ListTypes.X09:
+            self.set_body(C3DisinfectBody(super().body, data_offset=1))
+        elif self.body_type == ListTypes.X10:
+            self.set_body(C3UnitParaBody(super().body, data_offset=1))
         self.set_attr()
