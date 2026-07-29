@@ -430,6 +430,10 @@ class C3UnitParaBody(MessageBody):
         self.temp_tf = body[data_offset + 51]
         self.idu_t1s1 = body[data_offset + 52]
         self.idu_t1s2 = body[data_offset + 53]
+        # POZOR - rozpor v oficialni dokumentaci: starsi Modbus mapa uvadi
+        # "actual value/10, in m3/H", novejsi (V4.7) uvadi "Actual value*100,
+        # m3/h" pro stejne misto. Hodnota nize je RAW, needeleno/nasobeno -
+        # potreba overit empiricky (napr. diff-metodou proti znamemu prutoku).
         self.water_flow = body[data_offset + 54] * 256 + body[data_offset + 55]
         self.odu_plan_vol_lmt = body[data_offset + 56]
         self.current_unit_capacity = body[data_offset + 57]
@@ -438,6 +442,10 @@ class C3UnitParaBody(MessageBody):
         self.water_pressure = body[data_offset + 61] * 256 + body[data_offset + 62]
         self.room_rel_hum = body[data_offset + 63]
         self.pwm_pump_out = body[data_offset + 63]
+        # POZOR - dle novejsi Modbus mapy (V4.7) tyto 4 kumulativni pocitadla
+        # energie maji byt "For R290 units: actual value*100; for other units:
+        # actual value; kWh" - tedy skalovani zavisi na typu jednotky (R290 vs.
+        # jina), coz z tohoto ramce nepozname. Hodnoty nize jsou RAW.
         self.total_electricity0 = (
             (body[data_offset + 66] << 32)
             + (body[data_offset + 67] << 16)
@@ -462,12 +470,19 @@ class C3UnitParaBody(MessageBody):
             + (body[data_offset + 80] << 8)
             + (body[data_offset + 81])
         )
+        # POZOR - novejsi Modbus mapa uvadi u obdobnych "real-time" vykonovych
+        # hodnot format "Actual value*100, kW" - RAW hodnota nize neni delena,
+        # potreba overit (napr. proti instant_power0 jiz vystavenemu pres HA).
         self.instant_power0 = (body[data_offset + 82] << 8) + (body[data_offset + 83])
         self.instant_renew_power0 = (body[data_offset + 84] << 8) + (
             body[data_offset + 85]
         )
-        self.total_renew_power0 = (body[data_offset + 84] << 8) + (
-            body[data_offset + 85]
+        # BUGFIX: puvodne cetlo stejne bajty jako instant_renew_power0 (kopirovaci
+        # chyba). Podle rozboru syroveho X10 ramce (offset+86/+87 byly dosud
+        # zcela neparsovane "neznama data") jde nejspis o spravne umisteni
+        # total_renew_power0 - potreba empiricky overit diff-metodou.
+        self.total_renew_power0 = (body[data_offset + 86] << 8) + (
+            body[data_offset + 87]
         )
 
 
