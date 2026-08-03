@@ -430,11 +430,13 @@ class C3UnitParaBody(MessageBody):
         self.temp_tf = body[data_offset + 51]
         self.idu_t1s1 = body[data_offset + 52]
         self.idu_t1s2 = body[data_offset + 53]
-        # POZOR - rozpor v oficialni dokumentaci: starsi Modbus mapa uvadi
-        # "actual value/10, in m3/H", novejsi (V4.7) uvadi "Actual value*100,
-        # m3/h" pro stejne misto. Hodnota nize je RAW, needeleno/nasobeno -
-        # potreba overit empiricky (napr. diff-metodou proti znamemu prutoku).
-        self.water_flow = body[data_offset + 54] * 256 + body[data_offset + 55]
+        # Skalovani /100 potvrzeno empiricky (2026-08-03): displej ovladaci
+        # jednotky ukazoval ~0.73 m3/h, raw hodnota v ramci byla 91-97 =>
+        # 0.91-0.97 po deleni 100 - odpovida nove Modbus mape (V4.7:
+        # "Actual value*100, m3/h"), stara mapa (/10) davala nesmyslnych 9+ m3/h.
+        self.water_flow = (
+            body[data_offset + 54] * 256 + body[data_offset + 55]
+        ) / 100
         self.odu_plan_vol_lmt = body[data_offset + 56]
         self.current_unit_capacity = body[data_offset + 57]
         self.sphera_ahs_voltage = body[data_offset + 59]
