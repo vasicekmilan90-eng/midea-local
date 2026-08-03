@@ -129,6 +129,22 @@ class C3SilentLevel(IntEnum):
     SUPER_SILENT = 0x3
 
 
+class C3FanSpeed(IntEnum):
+    """C3 Fan Speed level.
+
+    POZOR: presne nazvy urovni (napr. "nizka/stredni/vysoka") nejsou
+    potvrzeny zadnou verejne dostupnou dokumentaci k tomuto modelu
+    (Galmet Prima 06 GT) - hodnoty 10/20/30/40 potvrdil uzivatel z pameti
+    (odpovidaji tomu, co uz kod pocital jako raw_byte*10). Pojmenovano
+    obecne jako LEVEL_1..4, dokud nebude k dispozici presnejsi zdroj.
+    """
+
+    LEVEL_1 = 10
+    LEVEL_2 = 20
+    LEVEL_3 = 30
+    LEVEL_4 = 40
+
+
 class C3DeviceMode(IntEnum):
     """C3 Device Mode."""
 
