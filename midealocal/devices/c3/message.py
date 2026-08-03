@@ -9,7 +9,7 @@ from midealocal.message import (
     MessageType,
 )
 
-from .const import C3SilentLevel
+from .const import C3FanSpeed, C3SilentLevel
 
 TEMP_NEG_VALUE = 127
 
@@ -395,7 +395,13 @@ class C3UnitParaBody(MessageBody):
         super().__init__(body)
         self.comp_run_freq = body[data_offset]
         self.unit_mode_run = body[data_offset + 1]
-        self.fan_speed = body[data_offset + 3] * 10
+        _fan_speed_raw = body[data_offset + 3] * 10
+        try:
+            self.fan_speed = C3FanSpeed(_fan_speed_raw).name
+        except ValueError:
+            # neznama hodnota - vratime radeji cislo nez aby to spadlo,
+            # ale je to signal, ze existuje i jina uroven nez 10/20/30/40
+            self.fan_speed = _fan_speed_raw
         self.fg_capacity_need = body[data_offset + 5]
         self.temp_t3 = body[data_offset + 6]
         self.temp_t4 = body[data_offset + 7]
