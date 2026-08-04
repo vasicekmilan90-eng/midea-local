@@ -119,7 +119,7 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.disinfect_set_weekday: None,
                 DeviceAttributes.disinfect_start_hour: None,
                 DeviceAttributes.disinfect_start_minutes: None,
-                DeviceAttributes.exv_current: None,
+                DeviceAttributes.exv_opening: None,
                 DeviceAttributes.fg_capacity_need: None,
                 DeviceAttributes.fg_usb_info_connect: None,
                 DeviceAttributes.hydbox_subtype: None,
@@ -158,6 +158,7 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.zone2_temp_set: None,
                 DeviceAttributes.zone_terminal_type: None,
                 DeviceAttributes.error_code: 0,
+                DeviceAttributes.error_code_description: "No error",
             },
         )
         self._default_temperature_step: float = 0.5
