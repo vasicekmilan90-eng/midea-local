@@ -53,6 +53,7 @@ class DeviceAttributes(StrEnum):
     eco_timer_state = "eco_timer_state"
     tbh = "tbh"
     error_code = "error_code"
+    error_code_description = "error_code_description"
     holiday_on = "holiday_on"
     comp_run_freq = "comp_run_freq"
     fan_speed = "fan_speed"
@@ -81,7 +82,7 @@ class DeviceAttributes(StrEnum):
     disinfect_set_weekday = "disinfect_set_weekday"
     disinfect_start_hour = "disinfect_start_hour"
     disinfect_start_minutes = "disinfect_start_minutes"
-    exv_current = "exv_current"
+    exv_opening = "exv_opening"
     fg_capacity_need = "fg_capacity_need"
     fg_usb_info_connect = "fg_usb_info_connect"
     hydbox_subtype = "hydbox_subtype"
@@ -150,3 +151,74 @@ class C3DeviceMode(IntEnum):
 
     COOL = 2
     HEAT = 3
+
+
+class C3UnitRunMode(IntEnum):
+    """C3 Unit actual running mode (registr 101 dle Modbus V4.7: '0: off,
+    2: cooling, 3: heating').
+    """
+
+    OFF = 0
+    COOL = 2
+    HEAT = 3
+
+
+# Error code table 1 z oficialni Modbus dokumentace (V4.7, str. 11-12).
+# Format: raw_value: (kod, popis).
+# POZOR: 4 kody (Hd, HE, L2, L8) maji v PDF nejasne priradeny popis kvuli
+# zpusobu extrakce textu (dvousloupcovy layout) - u nich radeji necham jen
+# kod bez popisu, nez abych riskoval spatnou diagnozu.
+C3_ERROR_CODE_TABLE: dict[int, tuple[str, str]] = {
+    1: ("E0", "Water flow fault (E8 displayed 3 times)"),
+    2: ("E1", "Outlet water temp. sensor for Zone 2 (Tw2) fault"),
+    3: ("E2", "Communication fault between controller and hydraulic module"),
+    4: ("E3", "Final outlet water temp. sensor (T1) fault"),
+    5: ("E4", "Water tank temp. sensor (T5) fault"),
+    6: ("E5", "Condenser outlet refrigerant temp. sensor (T3) fault"),
+    7: ("E6", "Ambient temp. sensor (T4) fault"),
+    8: ("E7", "Buffer tank up temp. sensor (Tbt1) fault"),
+    9: ("E8", "Water flow failure"),
+    10: ("E9", "Suction temp. sensor (Th) fault"),
+    11: ("EA", "Discharge temp. sensor (Tp) fault"),
+    12: ("Eb", "Solar temp. sensor (Tsolar) fault"),
+    13: ("Ec", "Buffer tank low temp. sensor (Tbt2) fault"),
+    14: ("Ed", "Inlet water temp. sensor (Tw_in) malfunction"),
+    15: ("EE", "Hydraulic module EEPROM failure"),
+    20: ("P0", "Low pressure switch protection"),
+    21: ("P1", "High pressure switch protection"),
+    23: ("P3", "Compressor overcurrent protection"),
+    24: ("P4", "High discharge temperature protection"),
+    25: ("P5", "|Tw_out - Tw_in| value too big protection"),
+    26: ("P6", "Inverter module protection"),
+    31: ("Pb", "Anti-freeze mode"),
+    33: ("Pd", "High temperature protection of refrigerant outlet temp. of condenser"),
+    38: ("PP", "Tw_out - Tw_in unusual protection"),
+    39: ("H0", "Communication fault between main board PCB B and hydraulic module main control board"),
+    40: ("H1", "Communication fault between inverter module PCB A and main control board PCB B"),
+    41: ("H2", "Refrigerant liquid temp. sensor (T2) fault"),
+    42: ("H3", "Refrigerant gas temp. sensor (T2B) fault"),
+    43: ("H4", "Three times P6 (L0/L1) protection"),
+    44: ("H5", "Room temp. sensor (Ta) fault"),
+    45: ("H6", "DC fan motor fault"),
+    46: ("H7", "Voltage protection"),
+    47: ("H8", "Pressure sensor fault"),
+    48: ("H9", "Speed difference > 15Hz between front and back clock"),
+    49: ("HA", "Speed difference > 15Hz between real and setting speed"),
+    50: ("Hb", "3 times PP protection and Tw_out < 7C"),
+    52: ("Hd", "Unknown / description unclear in source document"),
+    53: ("HE", "Unknown / description unclear in source document"),
+    54: ("HF", "Inverter module board EEPROM fault"),
+    55: ("HH", "H6 displayed 10 times in 2 hours"),
+    57: ("HP", "Low pressure protection (Pe<0.6) occurred 3 times in 1 hour"),
+    65: ("C7", "Transducer module temperature too high protection"),
+    112: ("bH", "PED PCB fault"),
+    116: ("F1", "Low DC generatrix voltage protection"),
+    134: ("L0", "Module protection"),
+    135: ("L1", "DC generatrix low voltage protection"),
+    136: ("L2", "Unknown / description unclear in source document"),
+    138: ("L4", "MCE fault"),
+    139: ("L5", "Zero speed protection"),
+    141: ("L7", "Phase sequence fault / phase loss or neutral+live reversed (3-phase only)"),
+    142: ("L8", "Unknown / description unclear in source document"),
+    143: ("L9", "Unknown / description unclear in source document"),
+}
