@@ -414,6 +414,9 @@ class C3UnitParaBody(MessageBody):
         # self.usb_index_max  body[data_offset + 14]
         # self.odu_comp_current  body[data_offset + 16]
         self.odu_voltage = body[data_offset + 17] * 256 + body[data_offset + 18]
+        # POZOR: nazev "exv_current" prevzat z puvodniho community projektu,
+        # skutecny vyznam (proud pohonu expanzniho ventilu vs. neco jineho)
+        # neni nezavisle overen - drz konzistentne jako "raw, unverified".
         self.exv_current = body[data_offset + 19] * 256 + body[data_offset + 20]
         self.odu_model = body[data_offset + 21]
         # self.unit_online_num  body[data_offset + 22]
