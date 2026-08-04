@@ -9,7 +9,7 @@ from midealocal.message import (
     MessageType,
 )
 
-from .const import C3FanSpeed, C3SilentLevel
+from .const import C3_ERROR_CODE_TABLE, C3FanSpeed, C3SilentLevel, C3UnitRunMode
 
 TEMP_NEG_VALUE = 127
 
@@ -291,6 +291,13 @@ class C3BasicBody(MessageBody):
         self.dhw_temp_min = float(body[data_offset + 20])
         self.tank_actual_temperature = float(body[data_offset + 21])
         self.error_code = body[data_offset + 22]
+        _code_info = C3_ERROR_CODE_TABLE.get(self.error_code)
+        if self.error_code == 0:
+            self.error_code_description = "No error"
+        elif _code_info:
+            self.error_code_description = f"{_code_info[0]}: {_code_info[1]}"
+        else:
+            self.error_code_description = f"Unknown code (raw={self.error_code})"
         self.tbh_control = body[data_offset + 23] & 0x80 > 0
         self.SysEnergyAnaEN = body[data_offset + 23] & 0x20 > 0
         self.HMIEnergyAnaSetEN = body[data_offset + 23] & 0x40 > 0
@@ -394,7 +401,11 @@ class C3UnitParaBody(MessageBody):
         """Initialize C3 UnitPara message body."""
         super().__init__(body)
         self.comp_run_freq = body[data_offset]
-        self.unit_mode_run = body[data_offset + 1]
+        _unit_mode_raw = body[data_offset + 1]
+        try:
+            self.unit_mode_run = C3UnitRunMode(_unit_mode_raw).name
+        except ValueError:
+            self.unit_mode_run = _unit_mode_raw
         _fan_speed_raw = body[data_offset + 3] * 10
         try:
             self.fan_speed = C3FanSpeed(_fan_speed_raw).name
@@ -414,10 +425,11 @@ class C3UnitParaBody(MessageBody):
         # self.usb_index_max  body[data_offset + 14]
         # self.odu_comp_current  body[data_offset + 16]
         self.odu_voltage = body[data_offset + 17] * 256 + body[data_offset + 18]
-        # POZOR: nazev "exv_current" prevzat z puvodniho community projektu,
-        # skutecny vyznam (proud pohonu expanzniho ventilu vs. neco jineho)
-        # neni nezavisle overen - drz konzistentne jako "raw, unverified".
-        self.exv_current = body[data_offset + 19] * 256 + body[data_offset + 20]
+        # OPRAVENO dle oficialni Modbus dokumentace (V4.7, registr 103 "EXV1"):
+        # "Openness of the expansion valve 1 of outdoor unit, P" - jde o
+        # OTEVRENI/POLOHU ventilu (procenta/jednotky P), NE o elektricky proud,
+        # jak naznacoval puvodni nazev "exv_current" z community projektu.
+        self.exv_opening = body[data_offset + 19] * 256 + body[data_offset + 20]
         self.odu_model = body[data_offset + 21]
         # self.unit_online_num  body[data_offset + 22]
         # self.current_code  body[data_offset + 23]
@@ -429,13 +441,19 @@ class C3UnitParaBody(MessageBody):
         self.temp_ta = body[data_offset + 38]
         self.temp_tb_t1 = body[data_offset + 39]
         self.temp_tb_t2 = body[data_offset + 40]
+        # POZOR: dokumentace ma DVA ruzne registry pro "kapacitu" s ruznym
+        # skalovanim - "123 Unit capacity" primo (napr. 4 = 4kW), a "140
+        # Capacity of hydraulic module" deleno 100. Neni jiste, ktery z nich
+        # odpovida temto dvema poljim - hodnoty nize jsou RAW.
         self.hydrobox_capacity = body[data_offset + 41]
         self.pressure_high = body[data_offset + 42] * 256 + body[data_offset + 43]
         self.pressure_low = body[data_offset + 44] * 256 + body[data_offset + 45]
         self.temp_th = body[data_offset + 46]
         self.machine_type = body[data_offset + 47]
         self.odu_target_fre = body[data_offset + 48]
-        self.dc_current = body[data_offset + 49]
+        # Skalovani /10 dle oficialni Modbus dokumentace (V4.7, registr 133
+        # "DC bus current"): "Actual value*10, A".
+        self.dc_current = body[data_offset + 49] / 10
         self.temp_tf = body[data_offset + 51]
         self.idu_t1s1 = body[data_offset + 52]
         self.idu_t1s2 = body[data_offset + 53]
