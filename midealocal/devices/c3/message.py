@@ -514,6 +514,27 @@ class C3UnitParaBody(MessageBody):
             body[data_offset + 87]
         )
 
+        # Identifikacni retezec na konci zpravy (overeno bajt po bajtu proti
+        # realne zachycene zprave: bajty 96-159 = vyplnovaci pomlcky "-",
+        # 160-191 = ASCII seriove cislo/model WiFi modulu, 192-199 = nuly).
+        # Hledame robustne (delka zpravy/offset se muze mezi revizemi lisit)
+        # - vezmeme vse po poslednim useku pomlcek az po prvni nulovy bajt.
+        dash_run = b"-" * 20
+        dash_idx = body.find(dash_run, data_offset)
+        self.wifi_module_serial = None
+        if dash_idx != -1:
+            after_dashes = body[dash_idx:]
+            # najdi konec useku pomlcek
+            stripped = after_dashes.lstrip(b"-")
+            end_idx = stripped.find(b"\x00")
+            raw_serial = stripped[: end_idx if end_idx != -1 else None]
+            try:
+                decoded = raw_serial.decode("ascii").strip()
+                if decoded:
+                    self.wifi_module_serial = decoded
+            except UnicodeDecodeError:
+                self.wifi_module_serial = None
+
 
 class MessageC3Response(MessageResponse):
     """C3 message response."""
