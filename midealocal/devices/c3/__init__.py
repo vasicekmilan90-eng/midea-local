@@ -159,6 +159,7 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.zone_terminal_type: None,
                 DeviceAttributes.error_code: 0,
                 DeviceAttributes.error_code_description: "No error",
+                DeviceAttributes.wifi_module_serial: None,
             },
         )
         self._default_temperature_step: float = 0.5
