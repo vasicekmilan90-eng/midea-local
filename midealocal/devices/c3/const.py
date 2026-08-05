@@ -54,6 +54,7 @@ class DeviceAttributes(StrEnum):
     tbh = "tbh"
     error_code = "error_code"
     error_code_description = "error_code_description"
+    wifi_module_serial = "wifi_module_serial"
     holiday_on = "holiday_on"
     comp_run_freq = "comp_run_freq"
     fan_speed = "fan_speed"
