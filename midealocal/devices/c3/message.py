@@ -469,30 +469,40 @@ class C3UnitParaBody(MessageBody):
         self.sphera_ahs_voltage = body[data_offset + 59]
         self.temp_t4a_ver = body[data_offset + 60]
         self.water_pressure = body[data_offset + 61] * 256 + body[data_offset + 62]
+        # OPRAVENO (2026-08-05): room_rel_hum a pwm_pump_out puvodne cetly
+        # STEJNY bajt (offset+63) - jedna ze dvou hodnot musela byt spatne.
+        # Nemame zpetne zjistitelny spravny offset pro pwm_pump_out, takze
+        # ho radeji necham jako None (nedostupne), nez abych predstiral
+        # duplicitni "nezavislou" hodnotu, ktera by matla uzivatele.
         self.room_rel_hum = body[data_offset + 63]
-        self.pwm_pump_out = body[data_offset + 63]
-        # POZOR - dle novejsi Modbus mapy (V4.7) tyto 4 kumulativni pocitadla
-        # energie maji byt "For R290 units: actual value*100; for other units:
-        # actual value; kWh" - tedy skalovani zavisi na typu jednotky (R290 vs.
-        # jina), coz z tohoto ramce nepozname. Hodnoty nize jsou RAW.
+        self.pwm_pump_out = None
+        # R290-podminene skalovani energetickych pocitadel (2026-08-05):
+        # dokumentace uvadi "For R290 units: actual value*100; for other
+        # units: actual value" - hydbox_subtype (viz vyse) rika, o jaky typ
+        # jednotky jde. Hodnoty subtype 3/4/5/6/9 = R290 varianty (dle
+        # dokumentace: 3=R290-A, 4=R290-N, 5=C-R290-A, 6=C-R290-N,
+        # 9=R290-M) - u tech delime 100, jinak necham raw.
+        _is_r290 = self.hydbox_subtype in (3, 4, 5, 6, 9)
+        _energy_scale = 100 if _is_r290 else 1
+
         self.total_electricity0 = (
             (body[data_offset + 66] << 32)
             + (body[data_offset + 67] << 16)
             + (body[data_offset + 68] << 8)
             + (body[data_offset + 69])
-        )
+        ) / _energy_scale
         self.total_thermal0 = (
             (body[data_offset + 70] << 32)
             + (body[data_offset + 71] << 16)
             + (body[data_offset + 72] << 8)
             + (body[data_offset + 73])
-        )
+        ) / _energy_scale
         self.heat_elec_total_consum0 = (
             (body[data_offset + 74] << 32)
             + (body[data_offset + 75] << 16)
             + (body[data_offset + 76] << 8)
             + (body[data_offset + 77])
-        )
+        ) / _energy_scale
         self.heat_elec_total_capacity0 = (
             (body[data_offset + 78] << 32)
             + (body[data_offset + 79] << 16)
