@@ -60,6 +60,7 @@ class DeviceAttributes(StrEnum):
     temperature_max = "temperature_max"
     temperature_min = "temperature_min"
     status_heating = "status_heating"
+    status_cool = "status_cool"
     status_dhw = "status_dhw"
     status_tbh = "status_tbh"
     status_ibh = "status_ibh"
@@ -72,17 +73,87 @@ class DeviceAttributes(StrEnum):
     silent_mode = "silent_mode"
     silent_level = "silent_level"
     eco_mode = "eco_mode"
+    eco_function_state = "eco_function_state"
+    eco_timer_state = "eco_timer_state"
     tbh = "tbh"
     error_code = "error_code"
+    error_code_description = "error_code_description"
+    wifi_module_serial = "wifi_module_serial"
+    holiday_on = "holiday_on"
+    comp_run_freq = "comp_run_freq"
+    fan_speed = "fan_speed"
+    temp_t3 = "temp_t3"
+    temp_ta = "temp_ta"
+    pressure_high = "pressure_high"
+    pressure_low = "pressure_low"
+    water_flow = "water_flow"
+    water_pressure = "water_pressure"
+    heat_elec_total_consum0 = "heat_elec_total_consum0"
+    heat_elec_total_capacity0 = "heat_elec_total_capacity0"
+    heat = "heat"
+    cool = "cool"
+    dhw = "dhw"
+    double_zone = "double_zone"
+    room_thermal_support = "room_thermal_support"
+    room_thermal_state = "room_thermal_state"
+    time_set = "time_set"
+    disinfect_run = "disinfect_run"
+    remote_onoff = "remote_onoff"
+    tbh_control = "tbh_control"
+    SysEnergyAnaEN = "SysEnergyAnaEN"
+    HMIEnergyAnaSetEN = "HMIEnergyAnaSetEN"
+    current_unit_capacity = "current_unit_capacity"
+    dc_current = "dc_current"
+    disinfect_set_weekday = "disinfect_set_weekday"
+    disinfect_start_hour = "disinfect_start_hour"
+    disinfect_start_minutes = "disinfect_start_minutes"
+    exv_opening = "exv_opening"
+    fg_capacity_need = "fg_capacity_need"
+    fg_usb_info_connect = "fg_usb_info_connect"
+    hydbox_subtype = "hydbox_subtype"
+    hydrobox_capacity = "hydrobox_capacity"
+    idu_t1s1 = "idu_t1s1"
+    idu_t1s2 = "idu_t1s2"
+    instant_renew_power0 = "instant_renew_power0"
+    machine_type = "machine_type"
+    odu_model = "odu_model"
+    odu_plan_vol_lmt = "odu_plan_vol_lmt"
+    odu_target_fre = "odu_target_fre"
+    odu_voltage = "odu_voltage"
+    pwm_pump_out = "pwm_pump_out"
+    room_rel_hum = "room_rel_hum"
+    sphera_ahs_voltage = "sphera_ahs_voltage"
+    t5s = "t5s"
+    tas = "tas"
+    temp_t1 = "temp_t1"
+    temp_t2 = "temp_t2"
+    temp_t2b = "temp_t2b"
+    temp_t4 = "temp_t4"
+    temp_t4a_ver = "temp_t4a_ver"
+    temp_t5 = "temp_t5"
+    temp_tb_t1 = "temp_tb_t1"
+    temp_tb_t2 = "temp_tb_t2"
+    temp_tf = "temp_tf"
+    temp_th = "temp_th"
+    temp_tp = "temp_tp"
+    temp_tsolar = "temp_tsolar"
+    temp_tw2 = "temp_tw2"
+    total_electricity0 = "total_electricity0"
+    total_renew_power0 = "total_renew_power0"
+    total_thermal0 = "total_thermal0"
+    unit_mode_run = "unit_mode_run"
+    zone1_temp_set = "zone1_temp_set"
+    zone2_temp_set = "zone2_temp_set"
+    zone_terminal_type = "zone_terminal_type"
 
 
 class MideaC3Device(MideaDevice):
     """Midea C3 device."""
 
     _silent_modes: ClassVar[list[str]] = [
-        C3SilentLevel.OFF.name.lower(),
-        C3SilentLevel.SILENT.name.lower(),
-        C3SilentLevel.SUPER_SILENT.name.lower(),
+        C3SilentLevel.OFF.name,
+        C3SilentLevel.SILENT.name,
+        C3SilentLevel.SUPER_SILENT.name,
     ]
 
     def __init__(
@@ -109,9 +180,12 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.zone1_water_temp_mode: False,
                 DeviceAttributes.zone2_water_temp_mode: False,
                 DeviceAttributes.silent_mode: False,
-                DeviceAttributes.silent_level: C3SilentLevel.OFF.name.lower(),
+                DeviceAttributes.silent_level: C3SilentLevel.OFF.name,
                 DeviceAttributes.eco_mode: False,
+                DeviceAttributes.eco_function_state: None,
+                DeviceAttributes.eco_timer_state: None,
                 DeviceAttributes.tbh: False,
+                DeviceAttributes.holiday_on: False,
                 DeviceAttributes.mode: 1,
                 DeviceAttributes.mode_auto: 1,
                 DeviceAttributes.zone_target_temp: [25.0, 25.0],
@@ -131,6 +205,7 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.temperature_min: [0.0, 0.0],
                 DeviceAttributes.total_energy_consumption: None,
                 DeviceAttributes.status_heating: None,
+                DeviceAttributes.status_cool: None,
                 DeviceAttributes.status_dhw: None,
                 DeviceAttributes.status_tbh: None,
                 DeviceAttributes.status_ibh: None,
@@ -139,7 +214,74 @@ class MideaC3Device(MideaDevice):
                 DeviceAttributes.temp_tw_in: None,
                 DeviceAttributes.temp_tw_out: None,
                 DeviceAttributes.instant_power0: None,
+                DeviceAttributes.comp_run_freq: None,
+                DeviceAttributes.fan_speed: None,
+                DeviceAttributes.temp_t3: None,
+                DeviceAttributes.temp_ta: None,
+                DeviceAttributes.pressure_high: None,
+                DeviceAttributes.pressure_low: None,
+                DeviceAttributes.water_flow: None,
+                DeviceAttributes.water_pressure: None,
+                DeviceAttributes.heat_elec_total_consum0: None,
+                DeviceAttributes.heat_elec_total_capacity0: None,
+                DeviceAttributes.heat: False,
+                DeviceAttributes.cool: False,
+                DeviceAttributes.dhw: False,
+                DeviceAttributes.double_zone: False,
+                DeviceAttributes.room_thermal_support: False,
+                DeviceAttributes.room_thermal_state: False,
+                DeviceAttributes.time_set: False,
+                DeviceAttributes.disinfect_run: False,
+                DeviceAttributes.remote_onoff: False,
+                DeviceAttributes.tbh_control: False,
+                DeviceAttributes.SysEnergyAnaEN: False,
+                DeviceAttributes.HMIEnergyAnaSetEN: False,
+                DeviceAttributes.current_unit_capacity: None,
+                DeviceAttributes.dc_current: None,
+                DeviceAttributes.disinfect_set_weekday: None,
+                DeviceAttributes.disinfect_start_hour: None,
+                DeviceAttributes.disinfect_start_minutes: None,
+                DeviceAttributes.exv_opening: None,
+                DeviceAttributes.fg_capacity_need: None,
+                DeviceAttributes.fg_usb_info_connect: None,
+                DeviceAttributes.hydbox_subtype: None,
+                DeviceAttributes.hydrobox_capacity: None,
+                DeviceAttributes.idu_t1s1: None,
+                DeviceAttributes.idu_t1s2: None,
+                DeviceAttributes.instant_renew_power0: None,
+                DeviceAttributes.machine_type: None,
+                DeviceAttributes.odu_model: None,
+                DeviceAttributes.odu_plan_vol_lmt: None,
+                DeviceAttributes.odu_target_fre: None,
+                DeviceAttributes.odu_voltage: None,
+                DeviceAttributes.pwm_pump_out: None,
+                DeviceAttributes.room_rel_hum: None,
+                DeviceAttributes.sphera_ahs_voltage: None,
+                DeviceAttributes.t5s: None,
+                DeviceAttributes.tas: None,
+                DeviceAttributes.temp_t1: None,
+                DeviceAttributes.temp_t2: None,
+                DeviceAttributes.temp_t2b: None,
+                DeviceAttributes.temp_t4: None,
+                DeviceAttributes.temp_t4a_ver: None,
+                DeviceAttributes.temp_t5: None,
+                DeviceAttributes.temp_tb_t1: None,
+                DeviceAttributes.temp_tb_t2: None,
+                DeviceAttributes.temp_tf: None,
+                DeviceAttributes.temp_th: None,
+                DeviceAttributes.temp_tp: None,
+                DeviceAttributes.temp_tsolar: None,
+                DeviceAttributes.temp_tw2: None,
+                DeviceAttributes.total_electricity0: None,
+                DeviceAttributes.total_renew_power0: None,
+                DeviceAttributes.total_thermal0: None,
+                DeviceAttributes.unit_mode_run: None,
+                DeviceAttributes.zone1_temp_set: None,
+                DeviceAttributes.zone2_temp_set: None,
+                DeviceAttributes.zone_terminal_type: None,
                 DeviceAttributes.error_code: 0,
+                DeviceAttributes.error_code_description: "No error",
+                DeviceAttributes.wifi_module_serial: None,
             },
         )
         self._default_temperature_step: float = 0.5
@@ -301,15 +443,14 @@ class MideaC3Device(MideaDevice):
                     C3SilentLevel.SILENT
                     if value
                     and self._attributes[DeviceAttributes.silent_level]
-                    == C3SilentLevel.OFF.name.lower()
+                    == C3SilentLevel.OFF.name
                     else C3SilentLevel[
-                        self._attributes[DeviceAttributes.silent_level].upper()
+                        self._attributes[DeviceAttributes.silent_level]
                     ]
                 )
             elif attr == DeviceAttributes.silent_level.value and isinstance(value, str):
-                normalized_value = value.upper()
-                message.silent_level = C3SilentLevel[normalized_value]
-                message.silent_mode = normalized_value != C3SilentLevel.OFF.name
+                message.silent_level = C3SilentLevel[value]
+                message.silent_mode = value != C3SilentLevel.OFF.name
         if message is not None:
             self.build_send(message)
 
@@ -371,4 +512,4 @@ class MideaC3Device(MideaDevice):
 
 
 class MideaAppliance(MideaC3Device):
-    """Midea C3 appliance."""
+    """Midea C3 appliance.""" 
